@@ -1,0 +1,11 @@
+# Bağımlılıklar (Binlerce dosya içerir, internetten çekilir)
+node_modules/
+
+# Kişisel Ayarlar ve Şifreler (Senin bilgisayarına özeldir)
+.env
+
+# İşletim Sistemi Kalıntıları (Mac'in oluşturduğu gereksiz dosyalar)
+.DS_Store
+
+# Log dosyaları (Hata kayıtları)
+npm-debug.log*
