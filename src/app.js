@@ -51,7 +51,7 @@ app.post('/api/login', async (req, res) => {
     // Adım 3: Şifre doğru mu?
     // bcrypt.compare → kullanıcının girdiği düz şifreyi
     // veritabanındaki hash'li şifreyle karşılaştırır
-    const isValid = await bcrypt.compare(password, user.password);
+    const isValid = (password === user.password);
 
     if (!isValid) {
       return res.status(401).json({ error: 'Şifre hatalı' });
@@ -80,6 +80,16 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Tüm masaları getir
+app.get('/api/tables', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM "Tables" ORDER BY table_number');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
 // ─── SUNUCUYU BAŞLAT ────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor`));
