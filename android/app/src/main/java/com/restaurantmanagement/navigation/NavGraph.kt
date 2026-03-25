@@ -10,7 +10,6 @@ import com.restaurantmanagement.ui.screens.AdminPanelScreen
 import com.restaurantmanagement.ui.screens.DailyReportScreen
 import com.restaurantmanagement.ui.screens.LoginScreen
 import com.restaurantmanagement.ui.screens.MenuScreen
-import com.restaurantmanagement.ui.screens.PaymentScreen
 import com.restaurantmanagement.ui.screens.TableDetailScreen
 import com.restaurantmanagement.ui.screens.TablesScreen
 

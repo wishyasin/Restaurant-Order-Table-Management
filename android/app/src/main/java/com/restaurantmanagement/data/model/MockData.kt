@@ -1,9 +1,11 @@
 package com.restaurantmanagement.data.model
 
+import androidx.compose.runtime.mutableStateListOf
+
 object MockData {
 
     // masalar (şimdilik random durumlar verdim)
-    val tables = mutableListOf(
+    val tables = mutableStateListOf(
         Table(1, 1, 4, TableStatus.EMPTY),
         Table(2, 2, 2, TableStatus.OCCUPIED),
         Table(3, 3, 6, TableStatus.WAITING_BILL),
@@ -13,7 +15,7 @@ object MockData {
     )
 
     // menu
-    val menuItems = mutableListOf(
+    val menuItems = mutableStateListOf(
         MenuItem(1, "Water", 1.0, MenuCategory.DRINK, "Bottle Water"),
         MenuItem(2, "Burger", 6.0, MenuCategory.FOOD, "Beef burger with lettuce, tomato and cheese"),
         MenuItem(3, "Sandwich", 3.0, MenuCategory.FOOD, "Simple sandwich"),
@@ -31,7 +33,7 @@ object MockData {
     )
 
     // örnek siparişler
-    val mockOrders = mutableListOf(
+    val mockOrders = mutableStateListOf(
         Order(
             id = 1,
             tableId = 2,
