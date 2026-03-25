@@ -40,13 +40,7 @@ fun NavGraph(navController: NavHostController) {
             val tableId = backStackEntry.arguments?.getInt("tableId") ?: 0
             MenuScreen(navController, tableId)
         }
-        composable(
-            route = Screen.Payment.route,
-            arguments = listOf(navArgument("tableId") { type = NavType.IntType })
-        ) { backStackEntry ->
-            val tableId = backStackEntry.arguments?.getInt("tableId") ?: 0
-            PaymentScreen(navController, tableId)
-        }
+
         composable(Screen.DailyReport.route) {
             DailyReportScreen(navController)
         }
