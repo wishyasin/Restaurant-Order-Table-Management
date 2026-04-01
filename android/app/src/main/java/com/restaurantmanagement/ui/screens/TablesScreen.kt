@@ -53,7 +53,7 @@ fun TablesScreen(navController: NavController) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "☕ Table Management",
+                        text = "Table Management",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -171,30 +171,23 @@ fun TableCard(table: Table, onClick: () -> Unit) {
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Table",
-                fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.85f),
-                modifier = Modifier.align(Alignment.TopStart)
-            )
-            Text(
-                text = "${table.number}",
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.align(Alignment.Center)
-            )
-            Column(modifier = Modifier.align(Alignment.BottomStart)) {
+            // Üst kısım: Masa yazısı ve kapasite
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = statusText,
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontWeight = FontWeight.Medium
+                    text = "Table ${table.number}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.9f)
                 )
                 Text(
                     text = "${table.capacity} Seats",
@@ -202,6 +195,23 @@ fun TableCard(table: Table, onClick: () -> Unit) {
                     color = Color.White.copy(alpha = 0.75f)
                 )
             }
+
+            // Orta kısım: Masa numarası
+            Text(
+                text = "${table.number}",
+                fontSize = 48.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
+            // Alt kısım: Durum
+            Text(
+                text = statusText,
+                fontSize = 12.sp,
+                color = Color.White.copy(alpha = 0.9f),
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

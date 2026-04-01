@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -32,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -44,14 +46,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.restaurantmanagement.data.model.MockData
-import com.restaurantmanagement.data.model.MenuItem
 import com.restaurantmanagement.data.model.OrderItem
+import com.restaurantmanagement.data.model.OrderStatus
 import com.restaurantmanagement.data.model.TableStatus
-import com.restaurantmanagement.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,15 +61,16 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
 
     val table = MockData.tables.find { it.id == tableId } ?: return
 
-    // Masanın mevcut siparişini bul, yoksa boş başlat
     val existingOrder = MockData.mockOrders.find { it.tableId == tableId }
-    val orderItems = remember {
+    val orderItems = remember(tableId) {
         mutableStateListOf<OrderItem>().apply {
             existingOrder?.items?.let { addAll(it) }
         }
     }
 
     val totalAmount = orderItems.sumOf { it.menuItem.price * it.quantity }
+
+    var showPaymentDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -104,7 +107,7 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    navController.navigate(Screen.Menu.createRoute(tableId))
+                    navController.navigate(com.restaurantmanagement.navigation.Screen.Menu.createRoute(tableId))
                 },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
@@ -123,7 +126,6 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
                 .padding(paddingValues)
         ) {
             if (orderItems.isEmpty()) {
-                // Sipariş yoksa boş durum göster
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -131,10 +133,7 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "🪑",
-                            fontSize = 48.sp
-                        )
+                        Text(text = "🪑", fontSize = 48.sp)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "No orders yet",
@@ -151,7 +150,6 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
                     }
                 }
             } else {
-                // Sipariş listesi
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -182,7 +180,7 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
                 }
             }
 
-            // Alt kısım: toplam ve ödeme butonu
+            // Alt kısım
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
@@ -194,7 +192,7 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
+                        .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 80.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -215,9 +213,7 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Divider()
-
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Row(
@@ -233,17 +229,15 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
                         }
 
                         Button(
-                            onClick = {
-                                navController.navigate(Screen.Payment.createRoute(tableId))
-                            },
-                            modifier = Modifier.weight(2f),
+                            onClick = { showPaymentDialog = true },
+                            modifier = Modifier.weight(1f),
                             enabled = orderItems.isNotEmpty(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF4CAF50)
                             )
                         ) {
                             Text(
-                                text = "Proceed to Payment",
+                                text = "Payment",
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -251,6 +245,81 @@ fun TableDetailScreen(navController: NavController, tableId: Int) {
                 }
             }
         }
+    }
+
+    // Ödeme dialogu
+    if (showPaymentDialog) {
+        AlertDialog(
+            onDismissRequest = { showPaymentDialog = false },
+            title = {
+                Text(
+                    text = "Payment",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Total: $${String.format("%.2f", totalAmount)}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Select payment method:",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Nakit butonu
+                        Button(
+                            onClick = {
+                                completePayment(tableId, orderItems, OrderStatus.PAID_CASH)
+                                showPaymentDialog = false
+                                navController.popBackStack()
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4CAF50)
+                            )
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(text = "💵", fontSize = 20.sp)
+                                Text(text = "Cash", fontSize = 13.sp)
+                            }
+                        }
+                        // Kart butonu
+                        Button(
+                            onClick = {
+                                completePayment(tableId, orderItems, OrderStatus.PAID_CARD)
+                                showPaymentDialog = false
+                                navController.popBackStack()
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2196F3)
+                            )
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(text = "💳", fontSize = 20.sp)
+                                Text(text = "Card", fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showPaymentDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -272,7 +341,6 @@ fun OrderItemCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ürün bilgisi
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = orderItem.menuItem.name,
@@ -292,7 +360,6 @@ fun OrderItemCard(
                 )
             }
 
-            // Miktar kontrolü
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = onDecrease,
@@ -304,15 +371,13 @@ fun OrderItemCard(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-
                 Text(
                     text = "${orderItem.quantity}",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.width(24.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
-
                 IconButton(
                     onClick = onIncrease,
                     modifier = Modifier.size(32.dp)
@@ -323,9 +388,7 @@ fun OrderItemCard(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-
                 Spacer(modifier = Modifier.width(8.dp))
-
                 IconButton(
                     onClick = onDelete,
                     modifier = Modifier.size(32.dp)
@@ -338,5 +401,28 @@ fun OrderItemCard(
                 }
             }
         }
+    }
+}
+
+fun completePayment(
+    tableId: Int,
+    orderItems: List<OrderItem>,
+    paymentStatus: OrderStatus
+) {
+    // Siparişi güncelle
+    val orderIndex = MockData.mockOrders.indexOfFirst { it.tableId == tableId }
+    if (orderIndex >= 0) {
+        MockData.mockOrders[orderIndex] = MockData.mockOrders[orderIndex].copy(
+            status = paymentStatus,
+            items = orderItems
+        )
+    }
+
+    // Masayı boşalt
+    val tableIndex = MockData.tables.indexOfFirst { it.id == tableId }
+    if (tableIndex >= 0) {
+        MockData.tables[tableIndex] = MockData.tables[tableIndex].copy(
+            status = TableStatus.EMPTY
+        )
     }
 }
