@@ -1,95 +1,224 @@
 const express = require('express');
 const dotenv  = require('dotenv');
-const bcrypt  = require('bcrypt');   // Şifre doğrulama için
-const jwt     = require('jsonwebtoken'); // Giriş sonrası token üretmek için
-const pool    = require('./db');     // Az önce yazdığımız db.js'i bağla
+const bcrypt  = require('bcrypt');
+const jwt     = require('jsonwebtoken');
+const pool    = require('./db');
 
-// .env dosyasını oku (DB_HOST, JWT_SECRET gibi değişkenler buradan gelir)
 dotenv.config();
 
-const app = express(); 
-
-// Gelen isteklerin gövdesini (body) JSON olarak oku
-// Bu olmadan req.body boş gelir
+const app = express();
 app.use(express.json());
 
-// ─── TEST ENDPOINT ──────────────────────────────────────
-// Sunucu çalışıyor mu diye kontrol etmek için
+// ─── TEST ────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({ message: 'Adisyon sistemi çalışıyor! 🍽️' });
 });
 
-// ─── LOGIN ENDPOINT ─────────────────────────────────────
-// Android'den POST isteği gelir: { email: "...", password: "..." }
+// ─── LOGIN ───────────────────────────────────────────────
 app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
 
-  // İstek gövdesinden email ve şifreyi al
-  const { email, password } = req.body;
-
-  // Adım 1: Email veya şifre boş geldiyse hemen reddet
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email ve şifre zorunlu' });
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Kullanıcı adı ve şifre zorunlu' });
   }
 
   try {
-    // Adım 2: Bu email'e sahip kullanıcı veritabanında var mı?
-    // $1 → SQL injection'a karşı güvenli parametre kullanımı
-    // "Users" → tablo adı büyük harfle başlıyorsa tırnak gerekir
     const result = await pool.query(
-      'SELECT * FROM "Users" WHERE email = $1',
-      [email]
+      'SELECT * FROM "Users" WHERE username = $1',
+      [username]
     );
 
-    // Sorgu sonuç döndürmediyse → böyle bir kullanıcı yok
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Kullanıcı bulunamadı' });
     }
 
-    // Kullanıcı bulunduysa ilk satırı al
     const user = result.rows[0];
 
-    // Adım 3: Şifre doğru mu?
-    // bcrypt.compare → kullanıcının girdiği düz şifreyi
-    // veritabanındaki hash'li şifreyle karşılaştırır
-    const isValid = (password === user.password);
-
-    if (!isValid) {
+    if (password !== user.password) {
       return res.status(401).json({ error: 'Şifre hatalı' });
     }
 
-    // Adım 4: Her şey tamam → JWT token üret
-    // Bu token Android'e gönderilir, sonraki isteklerde kimlik kartı gibi kullanılır
-    // İçine kullanıcının id ve rolünü göm (admin mi, garson mu?)
     const token = jwt.sign(
-      { id: user.id, role: user.role },  // Token'ın içindeki bilgiler
-      process.env.JWT_SECRET,            // İmzalama anahtarı (.env'den)
-      { expiresIn: '8h' }                // 8 saat sonra geçersiz olur
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
     );
 
-    // Başarılı yanıt: token + kullanıcı bilgisi
-    // Şifreyi asla geri gönderme!
     res.json({
       token,
-      user: { id: user.id, name: user.name, role: user.role }
+      user: { id: user.id, username: user.username, role: user.role }
     });
 
   } catch (err) {
-    // Veritabanı bağlantı hatası gibi beklenmedik durumlar
     console.error(err);
     res.status(500).json({ error: 'Sunucu hatası' });
   }
 });
 
-// Tüm masaları getir
+// ─── MASALAR ─────────────────────────────────────────────
 app.get('/api/tables', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM "Tables" ORDER BY table_number');
+    const result = await pool.query(
+      'SELECT * FROM "Tables" ORDER BY table_number'
+    );
     res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Sunucu hatası' });
   }
 });
-// ─── SUNUCUYU BAŞLAT ────────────────────────────────────
+
+// ─── MENÜ ────────────────────────────────────────────────
+app.get('/api/menu', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM "MenuItems" ORDER BY category, name'
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+// ─── SİPARİŞ OLUŞTUR ─────────────────────────────────────
+app.post('/api/orders', async (req, res) => {
+  const { table_id, items } = req.body;
+
+  if (!table_id || !items || items.length === 0) {
+    return res.status(400).json({ error: 'Masa ve ürünler zorunlu' });
+  }
+
+  try {
+    const orderResult = await pool.query(
+      'INSERT INTO "Orders" (table_id, status) VALUES ($1, $2) RETURNING *',
+      [table_id, 'open']
+    );
+    const order = orderResult.rows[0];
+
+    for (const item of items) {
+      await pool.query(
+        'INSERT INTO "OrderItems" (order_id, menu_item_id, quantity) VALUES ($1, $2, $3)',
+        [order.id, item.menu_item_id, item.quantity]
+      );
+    }
+
+    await pool.query(
+      'UPDATE "Tables" SET status = $1 WHERE id = $2',
+      ['occupied', table_id]
+    );
+
+    res.status(201).json({ message: 'Sipariş oluşturuldu', order_id: order.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+// ─── MASANIN SİPARİŞLERİNİ GETİR ────────────────────────
+app.get('/api/orders/:table_id', async (req, res) => {
+  const { table_id } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT o.id as order_id, o.status, o.created_at,
+              oi.quantity, m.name, m.price, m.category
+       FROM "Orders" o
+       JOIN "OrderItems" oi ON oi.order_id = o.id
+       JOIN "MenuItems" m ON m.id = oi.menu_item_id
+       WHERE o.table_id = $1 AND o.status = 'open'
+       ORDER BY o.created_at DESC`,
+      [table_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+// ─── MASA DURUMUNU GÜNCELLE ───────────────────────────────
+app.patch('/api/tables/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const validStatuses = ['empty', 'occupied', 'waiting_bill'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Geçersiz durum' });
+  }
+
+  try {
+    const result = await pool.query(
+      'UPDATE "Tables" SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+// ─── ÖDEME / HESAP KAPAT ─────────────────────────────────
+app.post('/api/orders/:id/pay', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const orderResult = await pool.query(
+      'UPDATE "Orders" SET status = $1 WHERE id = $2 RETURNING *',
+      ['paid', id]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Sipariş bulunamadı' });
+    }
+
+    const order = orderResult.rows[0];
+
+    await pool.query(
+      'UPDATE "Tables" SET status = $1 WHERE id = $2',
+      ['empty', order.table_id]
+    );
+
+    res.json({ message: 'Ödeme alındı, masa boşaltıldı' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+// ─── GÜNLÜK RAPOR ─────────────────────────────────────────
+app.get('/api/reports/daily', async (req, res) => {
+  try {
+    const ordersResult = await pool.query(
+      `SELECT COUNT(*) as total_orders FROM "Orders"
+       WHERE created_at::date = CURRENT_DATE`
+    );
+
+    const revenueResult = await pool.query(
+      `SELECT COALESCE(SUM(m.price * oi.quantity), 0) as total_revenue
+       FROM "Orders" o
+       JOIN "OrderItems" oi ON oi.order_id = o.id
+       JOIN "MenuItems" m ON m.id = oi.menu_item_id
+       WHERE o.created_at::date = CURRENT_DATE`
+    );
+
+    const tablesResult = await pool.query(
+      `SELECT status, COUNT(*) as count FROM "Tables" GROUP BY status`
+    );
+
+    res.json({
+      total_orders: ordersResult.rows[0].total_orders,
+      total_revenue: revenueResult.rows[0].total_revenue,
+      tables: tablesResult.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
+
+// ─── SUNUCUYU BAŞLAT ─────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor`));
