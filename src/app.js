@@ -9,17 +9,17 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// ─── TEST ────────────────────────────────────────────────
+// TEST
 app.get('/', (req, res) => {
-  res.json({ message: 'Adisyon sistemi çalışıyor! 🍽️' });
+  res.json({ message: 'Restaurant management system is running!' });
 });
 
-// ─── LOGIN ───────────────────────────────────────────────
+// LOGIN
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).json({ error: 'Kullanıcı adı ve şifre zorunlu' });
+    return res.status(400).json({ error: 'Username and password are required' });
   }
 
   try {
@@ -29,13 +29,13 @@ app.post('/api/login', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Kullanıcı bulunamadı' });
+      return res.status(401).json({ error: 'User not found' });
     }
 
     const user = result.rows[0];
 
     if (password !== user.password) {
-      return res.status(401).json({ error: 'Şifre hatalı' });
+      return res.status(401).json({ error: 'Invalid password' });
     }
 
     const token = jwt.sign(
@@ -51,11 +51,11 @@ app.post('/api/login', async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ─── MASALAR ─────────────────────────────────────────────
+// GET ALL TABLES
 app.get('/api/tables', async (req, res) => {
   try {
     const result = await pool.query(
@@ -64,11 +64,11 @@ app.get('/api/tables', async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ─── MENÜ ────────────────────────────────────────────────
+// GET MENU
 app.get('/api/menu', async (req, res) => {
   try {
     const result = await pool.query(
@@ -77,16 +77,16 @@ app.get('/api/menu', async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ─── SİPARİŞ OLUŞTUR ─────────────────────────────────────
+// CREATE ORDER
 app.post('/api/orders', async (req, res) => {
   const { table_id, items } = req.body;
 
   if (!table_id || !items || items.length === 0) {
-    return res.status(400).json({ error: 'Masa ve ürünler zorunlu' });
+    return res.status(400).json({ error: 'Table and items are required' });
   }
 
   try {
@@ -108,14 +108,14 @@ app.post('/api/orders', async (req, res) => {
       ['occupied', table_id]
     );
 
-    res.status(201).json({ message: 'Sipariş oluşturuldu', order_id: order.id });
+    res.status(201).json({ message: 'Order created', order_id: order.id });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ─── MASANIN SİPARİŞLERİNİ GETİR ────────────────────────
+// GET ORDERS BY TABLE
 app.get('/api/orders/:table_id', async (req, res) => {
   const { table_id } = req.params;
 
@@ -133,18 +133,18 @@ app.get('/api/orders/:table_id', async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ─── MASA DURUMUNU GÜNCELLE ───────────────────────────────
+// UPDATE TABLE STATUS
 app.patch('/api/tables/:id', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
   const validStatuses = ['empty', 'occupied', 'waiting_bill'];
   if (!validStatuses.includes(status)) {
-    return res.status(400).json({ error: 'Geçersiz durum' });
+    return res.status(400).json({ error: 'Invalid status' });
   }
 
   try {
@@ -155,11 +155,11 @@ app.patch('/api/tables/:id', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ─── ÖDEME / HESAP KAPAT ─────────────────────────────────
+// PAY ORDER
 app.post('/api/orders/:id/pay', async (req, res) => {
   const { id } = req.params;
 
@@ -170,7 +170,7 @@ app.post('/api/orders/:id/pay', async (req, res) => {
     );
 
     if (orderResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Sipariş bulunamadı' });
+      return res.status(404).json({ error: 'Order not found' });
     }
 
     const order = orderResult.rows[0];
@@ -180,15 +180,15 @@ app.post('/api/orders/:id/pay', async (req, res) => {
       ['empty', order.table_id]
     );
 
-    res.json({ message: 'Ödeme alındı, masa boşaltıldı' });
+    res.json({ message: 'Payment received, table is now empty' });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ─── GÜNLÜK RAPOR ─────────────────────────────────────────
+// DAILY REPORT
 app.get('/api/reports/daily', async (req, res) => {
   try {
     const ordersResult = await pool.query(
@@ -215,10 +215,10 @@ app.get('/api/reports/daily', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ─── SUNUCUYU BAŞLAT ─────────────────────────────────────
+// START SERVER
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda çalışıyor`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
