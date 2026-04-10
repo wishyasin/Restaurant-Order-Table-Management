@@ -1,5 +1,7 @@
 package com.restaurantmanagement.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class OrderItem(
     val id: Int,
     val menuItem: MenuItem,
@@ -9,7 +11,7 @@ data class OrderItem(
 
 data class Order(
     val id: Int,
-    val tableId: Int,
+    @SerializedName("table_id") val tableId: Int,
     val items: List<OrderItem>,
     val status: OrderStatus,
     val timestamp: Long = System.currentTimeMillis()

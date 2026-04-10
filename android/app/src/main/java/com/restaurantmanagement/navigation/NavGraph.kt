@@ -1,17 +1,14 @@
 package com.restaurantmanagement.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.restaurantmanagement.ui.screens.AdminPanelScreen
-import com.restaurantmanagement.ui.screens.DailyReportScreen
-import com.restaurantmanagement.ui.screens.LoginScreen
-import com.restaurantmanagement.ui.screens.MenuScreen
-import com.restaurantmanagement.ui.screens.TableDetailScreen
-import com.restaurantmanagement.ui.screens.TablesScreen
+import com.restaurantmanagement.ui.screens.*
+import com.restaurantmanagement.viewmodel.*
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -22,9 +19,17 @@ fun NavGraph(navController: NavHostController) {
         composable(Screen.Login.route) {
             LoginScreen(navController)
         }
-        composable(Screen.Tables.route) {
-            TablesScreen(navController)
+
+        composable(
+            route = "${Screen.Tables.route}/{userRole}",
+            arguments = listOf(navArgument("userRole") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userRole = backStackEntry.arguments?.getString("userRole") ?: "STAFF"
+            val tableViewModel: TableViewModel = viewModel()
+
+            TablesScreen(navController, tableViewModel, userRole)
         }
+
         composable(
             route = Screen.TableDetail.route,
             arguments = listOf(navArgument("tableId") { type = NavType.IntType })
@@ -32,19 +37,32 @@ fun NavGraph(navController: NavHostController) {
             val tableId = backStackEntry.arguments?.getInt("tableId") ?: 0
             TableDetailScreen(navController, tableId)
         }
+
         composable(
             route = Screen.Menu.route,
             arguments = listOf(navArgument("tableId") { type = NavType.IntType })
         ) { backStackEntry ->
             val tableId = backStackEntry.arguments?.getInt("tableId") ?: 0
-            MenuScreen(navController, tableId)
+            val menuViewModel: MenuViewModel = viewModel()
+            MenuScreen(navController, tableId, menuViewModel)
         }
 
         composable(Screen.DailyReport.route) {
-            DailyReportScreen(navController)
+            val reportViewModel: ReportViewModel = viewModel()
+            DailyReportScreen(navController, reportViewModel)
         }
+
         composable(Screen.AdminPanel.route) {
-            AdminPanelScreen(navController)
+            val menuViewModel: MenuViewModel = viewModel()
+            val tableViewModel: TableViewModel = viewModel()
+            val adminViewModel: AdminViewModel = viewModel()
+
+            AdminPanelScreen(
+                navController = navController,
+                menuViewModel = menuViewModel,
+                tableViewModel = tableViewModel,
+                adminViewModel = adminViewModel
+            )
         }
     }
 }
