@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,47 +33,53 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.restaurantmanagement.data.model.MockData
 import com.restaurantmanagement.data.model.Table
 import com.restaurantmanagement.data.model.TableStatus
 import com.restaurantmanagement.navigation.Screen
+import com.restaurantmanagement.viewmodel.TableViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TablesScreen(navController: NavController) {
+fun TablesScreen(
+    navController: NavController,
+
+    viewModel: TableViewModel = viewModel(), userRole: String
+) {
+    LaunchedEffect(Unit) {
+        viewModel.fetchTables()
+    }
+
+    val tables = viewModel.tables
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = "Table Management",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+                title = { Text(text = "Table Management", fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = {
-                        navController.navigate(Screen.DailyReport.route)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.BarChart,
-                            contentDescription = "Daily Report"
-                        )
-                    }
-                    IconButton(onClick = {
-                        navController.navigate(Screen.AdminPanel.route)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Admin Panel"
-                        )
+
+                    if (userRole.equals("ADMIN", ignoreCase = true)) {
+                        IconButton(onClick = { navController.navigate(Screen.DailyReport.route) }) {
+                            Icon(
+                                imageVector = Icons.Default.BarChart,
+                                contentDescription = "Daily Report"
+                            )
+                        }
+                        IconButton(onClick = { navController.navigate(Screen.AdminPanel.route) }) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Admin Panel"
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -91,22 +98,37 @@ fun TablesScreen(navController: NavController) {
         ) {
             StatusLegend()
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(MockData.tables) { table ->
-                    TableCard(
-                        table = table,
-                        onClick = {
-                            navController.navigate(
-                                Screen.TableDetail.createRoute(table.id)
-                            )
-                        }
-                    )
+
+            val isLoading by viewModel.isLoading
+            val errorMessage by viewModel.errorMessage
+
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (errorMessage != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = errorMessage!!, color = Color.Red)
+                }
+            }else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+
+                    items(tables) { table ->
+                        TableCard(
+                            table = table,
+                            onClick = {
+                                navController.navigate(
+                                    Screen.TableDetail.createRoute(table.id)
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -177,7 +199,7 @@ fun TableCard(table: Table, onClick: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Üst kısım: Masa yazısı ve kapasite
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -196,7 +218,7 @@ fun TableCard(table: Table, onClick: () -> Unit) {
                 )
             }
 
-            // Orta kısım: Masa numarası
+
             Text(
                 text = "${table.number}",
                 fontSize = 48.sp,
@@ -205,7 +227,7 @@ fun TableCard(table: Table, onClick: () -> Unit) {
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            // Alt kısım: Durum
+
             Text(
                 text = statusText,
                 fontSize = 12.sp,

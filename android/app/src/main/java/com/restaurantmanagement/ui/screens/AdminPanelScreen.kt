@@ -1,51 +1,14 @@
 package com.restaurantmanagement.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,26 +20,29 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.restaurantmanagement.data.model.MenuCategory
 import com.restaurantmanagement.data.model.MenuItem
-import com.restaurantmanagement.data.model.MockData
 import com.restaurantmanagement.data.model.Table
 import com.restaurantmanagement.data.model.TableStatus
+import com.restaurantmanagement.viewmodel.MenuViewModel
+import com.restaurantmanagement.viewmodel.TableViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminPanelScreen(navController: NavController) {
-
+fun AdminPanelScreen(
+    navController: NavController,
+    menuViewModel: MenuViewModel,
+    tableViewModel: TableViewModel,
+    adminViewModel: com.restaurantmanagement.viewmodel.AdminViewModel
+) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Menu Items", "Tables")
 
-    // Menu item dialog state
+
     var showMenuDialog by remember { mutableStateOf(false) }
     var editingMenuItem by remember { mutableStateOf<MenuItem?>(null) }
-
-    // Table dialog state
     var showTableDialog by remember { mutableStateOf(false) }
     var editingTable by remember { mutableStateOf<Table?>(null) }
 
-    // Delete confirmation state
+
     var showDeleteMenuDialog by remember { mutableStateOf(false) }
     var deletingMenuItem by remember { mutableStateOf<MenuItem?>(null) }
     var showDeleteTableDialog by remember { mutableStateOf(false) }
@@ -85,18 +51,10 @@ fun AdminPanelScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = "Admin Panel",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+                title = { Text("Admin Panel", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -119,20 +77,11 @@ fun AdminPanelScreen(navController: NavController) {
                 },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
-                    tint = Color.White
-                )
+                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
             }
         }
     ) { paddingValues ->
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             TabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -145,200 +94,94 @@ fun AdminPanelScreen(navController: NavController) {
 
             when (selectedTab) {
                 0 -> MenuItemsTab(
-                    onEdit = {
-                        editingMenuItem = it
-                        showMenuDialog = true
-                    },
-                    onDelete = {
-                        deletingMenuItem = it
-                        showDeleteMenuDialog = true
-                    }
+                    menuItemsList = menuViewModel.menuItems,
+                    onEdit = { editingMenuItem = it; showMenuDialog = true },
+                    onDelete = { deletingMenuItem = it; showDeleteMenuDialog = true }
                 )
                 1 -> TablesTab(
-                    onEdit = {
-                        editingTable = it
-                        showTableDialog = true
-                    },
-                    onDelete = {
-                        deletingTable = it
-                        showDeleteTableDialog = true
-                    }
+                    tablesList = tableViewModel.tables,
+                    onEdit = { editingTable = it; showTableDialog = true },
+                    onDelete = { deletingTable = it; showDeleteTableDialog = true }
                 )
             }
         }
     }
 
-    // Menu Item Add/Edit Dialog
     if (showMenuDialog) {
         MenuItemDialog(
             menuItem = editingMenuItem,
             onDismiss = { showMenuDialog = false },
             onConfirm = { name, price, category, description ->
-                if (editingMenuItem != null) {
-                    val index = MockData.menuItems.indexOfFirst { it.id == editingMenuItem!!.id }
-                    if (index >= 0) {
-                        MockData.menuItems[index] = editingMenuItem!!.copy(
-                            name = name,
-                            price = price,
-                            category = category,
-                            description = description
-                        )
-                    }
-                } else {
-                    MockData.menuItems.add(
-                        MenuItem(
-                            id = MockData.menuItems.size + 1,
-                            name = name,
-                            price = price,
-                            category = category,
-                            description = description
-                        )
-                    )
+                adminViewModel.saveMenuItem(editingMenuItem?.id, name, price, category.name, description) {
+                    menuViewModel.fetchMenu()
+                    showMenuDialog = false
                 }
-                showMenuDialog = false
             }
         )
     }
 
-    // Table Add/Edit Dialog
     if (showTableDialog) {
         TableDialog(
             table = editingTable,
             onDismiss = { showTableDialog = false },
             onConfirm = { number, capacity ->
-                if (editingTable != null) {
-                    val index = MockData.tables.indexOfFirst { it.id == editingTable!!.id }
-                    if (index >= 0) {
-                        MockData.tables[index] = editingTable!!.copy(
-                            number = number,
-                            capacity = capacity
-                        )
-                    }
-                } else {
-                    MockData.tables.add(
-                        Table(
-                            id = MockData.tables.size + 1,
-                            number = number,
-                            capacity = capacity,
-                            status = TableStatus.EMPTY
-                        )
-                    )
+                adminViewModel.saveTable(number, capacity) {
+                    tableViewModel.fetchTables()
+                    showTableDialog = false
                 }
-                showTableDialog = false
             }
         )
     }
 
-    // Delete Menu Item Confirmation
+
     if (showDeleteMenuDialog && deletingMenuItem != null) {
         AlertDialog(
             onDismissRequest = { showDeleteMenuDialog = false },
             title = { Text("Delete Item") },
             text = { Text("Are you sure you want to delete \"${deletingMenuItem!!.name}\"?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        MockData.menuItems.removeIf { it.id == deletingMenuItem!!.id }
+                TextButton(onClick = {
+                    adminViewModel.deleteMenuItem(deletingMenuItem!!.id) {
+                        menuViewModel.fetchMenu()
                         showDeleteMenuDialog = false
                     }
-                ) {
-                    Text("Delete", color = Color(0xFFF44336))
-                }
+                }) { Text("Delete", color = Color.Red) }
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteMenuDialog = false }) {
-                    Text("Cancel")
-                }
-            }
+            dismissButton = { TextButton(onClick = { showDeleteMenuDialog = false }) { Text("Cancel") } }
         )
     }
 
-    // Delete Table Confirmation
     if (showDeleteTableDialog && deletingTable != null) {
         AlertDialog(
             onDismissRequest = { showDeleteTableDialog = false },
             title = { Text("Delete Table") },
-            text = { Text("Are you sure you want to delete Table ${deletingTable!!.number}?") },
+            text = { Text("Delete Table ${deletingTable!!.number}?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        MockData.tables.removeIf { it.id == deletingTable!!.id }
+                TextButton(onClick = {
+                    adminViewModel.deleteTable(deletingTable!!.id) {
+                        tableViewModel.fetchTables()
                         showDeleteTableDialog = false
                     }
-                ) {
-                    Text("Delete", color = Color(0xFFF44336))
-                }
+                }) { Text("Delete", color = Color.Red) }
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteTableDialog = false }) {
-                    Text("Cancel")
-                }
-            }
+            dismissButton = { TextButton(onClick = { showDeleteTableDialog = false }) { Text("Cancel") } }
         )
     }
 }
 
 @Composable
-fun MenuItemsTab(
-    onEdit: (MenuItem) -> Unit,
-    onDelete: (MenuItem) -> Unit
-) {
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(MockData.menuItems) { menuItem ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = menuItem.category.emoji(),
-                        fontSize = 24.sp,
-                        modifier = Modifier.width(40.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+fun MenuItemsTab(menuItemsList: List<MenuItem>, onEdit: (MenuItem) -> Unit, onDelete: (MenuItem) -> Unit) {
+    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(menuItemsList) { item ->
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(item.category.emoji(), fontSize = 24.sp, modifier = Modifier.width(40.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = menuItem.name,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 15.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = menuItem.category.displayName(),
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "$${String.format("%.2f", menuItem.price)}",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Text(item.name, fontWeight = FontWeight.Bold)
+                        Text("$${String.format("%.2f", item.price)}", color = MaterialTheme.colorScheme.primary)
                     }
-                    IconButton(onClick = { onEdit(menuItem) }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = { onDelete(menuItem) }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = Color(0xFFF44336)
-                        )
-                    }
+                    IconButton(onClick = { onEdit(item) }) { Icon(Icons.Default.Edit, contentDescription = null, tint = Color.Blue) }
+                    IconButton(onClick = { onDelete(item) }) { Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red) }
                 }
             }
         }
@@ -346,68 +189,17 @@ fun MenuItemsTab(
 }
 
 @Composable
-fun TablesTab(
-    onEdit: (Table) -> Unit,
-    onDelete: (Table) -> Unit
-) {
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(MockData.tables) { table ->
-            val statusColor = when (table.status) {
-                TableStatus.EMPTY -> Color(0xFF4CAF50)
-                TableStatus.OCCUPIED -> Color(0xFFF44336)
-                TableStatus.WAITING_BILL -> Color(0xFFFF9800)
-            }
-            val statusText = when (table.status) {
-                TableStatus.EMPTY -> "Empty"
-                TableStatus.OCCUPIED -> "Occupied"
-                TableStatus.WAITING_BILL -> "Waiting Bill"
-            }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+fun TablesTab(tablesList: List<Table>, onEdit: (Table) -> Unit, onDelete: (Table) -> Unit) {
+    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(tablesList) { table ->
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Table ${table.number}",
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 15.sp
-                        )
-                        Text(
-                            text = "${table.capacity} Seats",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = statusText,
-                            fontSize = 12.sp,
-                            color = statusColor,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Text("Table ${table.number}", fontWeight = FontWeight.Bold)
+                        Text("Capacity: ${table.capacity}", fontSize = 12.sp)
                     }
-                    IconButton(onClick = { onEdit(table) }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = { onDelete(table) }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
-                            tint = Color(0xFFF44336)
-                        )
-                    }
+                    IconButton(onClick = { onEdit(table) }) { Icon(Icons.Default.Edit, contentDescription = null, tint = Color.Blue) }
+                    IconButton(onClick = { onDelete(table) }) { Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red) }
                 }
             }
         }
