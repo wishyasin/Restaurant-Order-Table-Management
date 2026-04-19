@@ -26,7 +26,6 @@ fun NavGraph(navController: NavHostController) {
         ) { backStackEntry ->
             val userRole = backStackEntry.arguments?.getString("userRole") ?: "STAFF"
             val tableViewModel: TableViewModel = viewModel()
-
             TablesScreen(navController, tableViewModel, userRole)
         }
 
@@ -35,7 +34,8 @@ fun NavGraph(navController: NavHostController) {
             arguments = listOf(navArgument("tableId") { type = NavType.IntType })
         ) { backStackEntry ->
             val tableId = backStackEntry.arguments?.getInt("tableId") ?: 0
-            TableDetailScreen(navController, tableId)
+            val orderViewModel: OrderViewModel = viewModel()
+            TableDetailScreen(navController, tableId, orderViewModel)
         }
 
         composable(
@@ -44,7 +44,8 @@ fun NavGraph(navController: NavHostController) {
         ) { backStackEntry ->
             val tableId = backStackEntry.arguments?.getInt("tableId") ?: 0
             val menuViewModel: MenuViewModel = viewModel()
-            MenuScreen(navController, tableId, menuViewModel)
+            val orderViewModel: OrderViewModel = viewModel()
+            MenuScreen(navController, tableId, menuViewModel, orderViewModel)
         }
 
         composable(Screen.DailyReport.route) {
@@ -56,7 +57,6 @@ fun NavGraph(navController: NavHostController) {
             val menuViewModel: MenuViewModel = viewModel()
             val tableViewModel: TableViewModel = viewModel()
             val adminViewModel: AdminViewModel = viewModel()
-
             AdminPanelScreen(
                 navController = navController,
                 menuViewModel = menuViewModel,

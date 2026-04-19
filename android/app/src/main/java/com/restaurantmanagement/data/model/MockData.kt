@@ -60,7 +60,8 @@ object MockData {
     val users = listOf(
         User(1, "admin", "1234", UserRole.ADMIN),
         User(2, "staff", "1234", UserRole.STAFF),
-        User(3,"barking","1702",UserRole.ADMIN)
+        User(3, "yasinn", "1234", UserRole.STAFF),
+        User(4,"barking","1702",UserRole.ADMIN)
 
     )
 }

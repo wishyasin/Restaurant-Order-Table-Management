@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -44,17 +45,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.restaurantmanagement.data.model.MenuCategory
 import com.restaurantmanagement.data.model.MenuItem
-import com.restaurantmanagement.data.model.MockData
 import com.restaurantmanagement.data.model.OrderItem
 import com.restaurantmanagement.viewmodel.MenuViewModel
+import com.restaurantmanagement.viewmodel.OrderViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MenuScreen(navController: NavController, tableId: Int, menuViewModel: MenuViewModel) {
+fun MenuScreen(navController: NavController, tableId: Int, menuViewModel: MenuViewModel, orderViewModel: OrderViewModel = viewModel()) {
 
+    LaunchedEffect(tableId) {
+        orderViewModel.fetchActiveOrder(tableId)
+    }
 
     val menuItems = menuViewModel.menuItems
     var selectedCategory by remember { mutableStateOf<MenuCategory?>(null) }
@@ -113,7 +118,6 @@ fun MenuScreen(navController: NavController, tableId: Int, menuViewModel: MenuVi
                 }
             }
 
-
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -146,7 +150,6 @@ fun MenuScreen(navController: NavController, tableId: Int, menuViewModel: MenuVi
                 }
             }
 
-
             if (totalSelected > 0) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -164,8 +167,7 @@ fun MenuScreen(navController: NavController, tableId: Int, menuViewModel: MenuVi
                         }
                         Button(
                             onClick = {
-
-                                menuViewModel.placeOrder(tableId, selectedItems) {
+                                menuViewModel.placeOrder(tableId, selectedItems, orderViewModel.currentOrder.value?.id) {
                                     navController.popBackStack()
                                 }
                             }
@@ -215,7 +217,6 @@ fun MenuItemCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = menuItem.name,
@@ -240,7 +241,6 @@ fun MenuItemCard(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (quantity > 0) {

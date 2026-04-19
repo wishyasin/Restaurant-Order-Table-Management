@@ -10,6 +10,9 @@ interface ApiService {
     @POST("login")
     suspend fun login(@Body request: LoginRequest): Response<User>
 
+    @POST("orders/{orderId}/items")
+
+    suspend fun addItemsToOrder(@Path("orderId") orderId: Int, @Body request: OrderRequest): Response<Unit>
     @GET("menu")
     suspend fun getMenuItems(): List<MenuItem>
 

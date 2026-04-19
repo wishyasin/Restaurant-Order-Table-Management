@@ -33,7 +33,7 @@ class MenuViewModel(private val repository: RestaurantRepository = RestaurantRep
         }
     }
 
-    fun placeOrder(tableId: Int, items: List<OrderItem>, onComplete: () -> Unit) {
+    fun placeOrder(tableId: Int, items: List<OrderItem>, existingOrderId: Int?, onComplete: () -> Unit) {
         viewModelScope.launch {
             try {
                 val orderRequest = OrderRequest(
@@ -41,12 +41,15 @@ class MenuViewModel(private val repository: RestaurantRepository = RestaurantRep
                     items = items.map { OrderItemRequest(it.menuItem.id, it.quantity) }
                 )
 
-                val response = RetrofitClient.apiService.createOrder(orderRequest)
+                val response = if (existingOrderId != null) {
+                    RetrofitClient.apiService.addItemsToOrder(existingOrderId, orderRequest)
+                } else {
+                    RetrofitClient.apiService.createOrder(orderRequest)
+                }
 
                 if (response.isSuccessful) {
                     onComplete()
                 } else {
-
                     println("Error: ${response.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
