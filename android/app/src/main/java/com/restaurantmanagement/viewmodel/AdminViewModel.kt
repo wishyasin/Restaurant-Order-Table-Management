@@ -1,10 +1,13 @@
 package com.restaurantmanagement.viewmodel
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.restaurantmanagement.data.model.User
 import com.restaurantmanagement.data.remote.MenuItemRequest
 import com.restaurantmanagement.data.remote.RetrofitClient
 import com.restaurantmanagement.data.remote.TableRequest
+import com.restaurantmanagement.data.remote.UserAddRequest
 import com.restaurantmanagement.data.repository.RestaurantRepository
 import kotlinx.coroutines.launch
 
@@ -59,6 +62,39 @@ class AdminViewModel(private val repository: RestaurantRepository = RestaurantRe
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    var users = mutableStateListOf<User>()
+        private set
+
+    init {
+        fetchUsers()
+    }
+
+    fun fetchUsers() {
+        viewModelScope.launch {
+            try {
+                val remoteUsers = RetrofitClient.apiService.getUsers()
+                users.clear()
+                users.addAll(remoteUsers)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
+    fun saveUser(username: String, email: String, pass: String, role: String, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val request = UserAddRequest(username, pass, role, email)
+                val response = RetrofitClient.apiService.addUser(request)
+                if (response.isSuccessful) {
+                    fetchUsers()
+                    onComplete()
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 }
