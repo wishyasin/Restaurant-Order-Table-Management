@@ -22,8 +22,11 @@ import com.restaurantmanagement.data.model.MenuCategory
 import com.restaurantmanagement.data.model.MenuItem
 import com.restaurantmanagement.data.model.Table
 import com.restaurantmanagement.data.model.TableStatus
+import com.restaurantmanagement.data.model.User
 import com.restaurantmanagement.viewmodel.MenuViewModel
 import com.restaurantmanagement.viewmodel.TableViewModel
+
+import androidx.compose.material.icons.filled.Person
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +37,7 @@ fun AdminPanelScreen(
     adminViewModel: com.restaurantmanagement.viewmodel.AdminViewModel
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Menu Items", "Tables")
+    val tabs = listOf("Menu Items", "Tables", "Staff")
 
 
     var showMenuDialog by remember { mutableStateOf(false) }
@@ -47,6 +50,8 @@ fun AdminPanelScreen(
     var deletingMenuItem by remember { mutableStateOf<MenuItem?>(null) }
     var showDeleteTableDialog by remember { mutableStateOf(false) }
     var deletingTable by remember { mutableStateOf<Table?>(null) }
+
+    var showUserDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -70,9 +75,11 @@ fun AdminPanelScreen(
                     if (selectedTab == 0) {
                         editingMenuItem = null
                         showMenuDialog = true
-                    } else {
+                    } else if(selectedTab == 1) {
                         editingTable = null
                         showTableDialog = true
+                    }else{
+                        showUserDialog = true
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.primary
@@ -103,6 +110,10 @@ fun AdminPanelScreen(
                     onEdit = { editingTable = it; showTableDialog = true },
                     onDelete = { deletingTable = it; showDeleteTableDialog = true }
                 )
+                2 -> {
+
+                    StaffTab(staffList = adminViewModel.users)
+                }
             }
         }
     }
@@ -133,6 +144,16 @@ fun AdminPanelScreen(
         )
     }
 
+    if (showUserDialog) {
+        UserDialog(
+            onDismiss = { showUserDialog = false },
+            onConfirm = { username, email, password, role ->
+                adminViewModel.saveUser(username, email, password, role) {
+                    showUserDialog = false
+                }
+            }
+        )
+    }
 
     if (showDeleteMenuDialog && deletingMenuItem != null) {
         AlertDialog(
@@ -391,6 +412,93 @@ fun TableDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
+        }
+    )
+}
+
+@Composable
+fun StaffTab(staffList: List<User>) {
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(staffList) { employee ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = employee.username,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Text(
+                            text = employee.email ?: "No email",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            Text(
+                                text = employee.role.name,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun UserDialog(onDismiss: () -> Unit, onConfirm: (String, String, String, String) -> Unit) {
+    var user by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var pass by remember { mutableStateOf("") }
+    var isAdmin by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add New User") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = user, onValueChange = { user = it }, label = { Text("Username") })
+                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email Address") })
+                OutlinedTextField(value = pass, onValueChange = { pass = it }, label = { Text("Password") })
+
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = isAdmin, onCheckedChange = { isAdmin = it })
+                    Text("Assign Admin Role")
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val role = if (isAdmin) "ADMIN" else "STAFF"
+                onConfirm(user, email, pass, role)
+            }) { Text("Add User") }
         }
     )
 }
