@@ -145,7 +145,6 @@ fun StatusLegend() {
     ) {
         LegendItem(color = Color(0xFF4CAF50), label = "Empty")
         LegendItem(color = Color(0xFFF44336), label = "Occupied")
-        LegendItem(color = Color(0xFFFF9800), label = "Waiting Bill")
     }
 }
 
@@ -170,16 +169,10 @@ fun LegendItem(color: Color, label: String) {
 @Composable
 fun TableCard(table: Table, onClick: () -> Unit) {
 
-    val backgroundColor = when (table.status) {
-        TableStatus.EMPTY -> Color(0xFF4CAF50)
-        TableStatus.OCCUPIED -> Color(0xFFF44336)
-        TableStatus.WAITING_BILL -> Color(0xFFFF9800)
-    }
-
-    val statusText = when (table.status) {
-        TableStatus.EMPTY -> "Empty"
-        TableStatus.OCCUPIED -> "Occupied"
-        TableStatus.WAITING_BILL -> "Waiting Bill"
+    val (backgroundColor, statusText) = when (table.status) {
+        TableStatus.EMPTY -> Color(0xFF4CAF50) to "Empty"
+        TableStatus.OCCUPIED -> Color(0xFFF44336) to "Occupied"
+        else -> Color.Gray to "Unknown"
     }
 
     Card(
