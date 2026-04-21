@@ -45,6 +45,12 @@ interface ApiService {
 
     @GET("reports/daily")
     suspend fun getDailyReport(): Response<DailyReportResponse>
+
+    @GET("users")
+    suspend fun getUsers(): List<User>
+
+    @POST("users")
+    suspend fun addUser(@Body user: UserAddRequest): Response<Unit>
 }
 data class LoginRequest(val username: String, val password: String)
 
@@ -100,4 +106,11 @@ data class TopItem(
     val category: String,
     val qty: Int,
     val total: Double
+)
+
+data class UserAddRequest(
+    val username: String,
+    val password: String,
+    val role: String,
+    val email: String
 )
