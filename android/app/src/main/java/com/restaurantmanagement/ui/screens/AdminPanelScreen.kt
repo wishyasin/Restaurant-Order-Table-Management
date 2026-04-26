@@ -52,6 +52,9 @@ fun AdminPanelScreen(
     var deletingTable by remember { mutableStateOf<Table?>(null) }
 
     var showUserDialog by remember { mutableStateOf(false) }
+    var showDeleteUserDialog by remember { mutableStateOf(false) }
+    var deletingUser by remember { mutableStateOf<User?>(null) }
+    var editingUser by remember { mutableStateOf<User?>(null) }
 
     Scaffold(
         topBar = {
@@ -112,7 +115,15 @@ fun AdminPanelScreen(
                 )
                 2 -> {
 
-                    StaffTab(staffList = adminViewModel.users)
+                    StaffTab(staffList = adminViewModel.users,
+                        onEdit = {
+                            editingUser = it
+                            showUserDialog = true
+                        },
+                        onDelete = {
+                            deletingUser = it
+                            showDeleteUserDialog = true
+                        })
                 }
             }
         }
@@ -145,12 +156,37 @@ fun AdminPanelScreen(
 
     if (showUserDialog) {
         UserDialog(
-            onDismiss = { showUserDialog = false },
+            userToEdit = editingUser,
+            onDismiss = {
+                showUserDialog = false
+                editingUser = null
+            },
             onConfirm = { username, email, password, role ->
-                adminViewModel.saveUser(username, email, password, role) {
-                    showUserDialog = false
+                if (editingUser == null) {
+                    adminViewModel.saveUser(username, email, password, role) {
+                        showUserDialog = false
+                    }
+                } else {
+                    adminViewModel.updateUser(editingUser!!.id, username, email, password, role) {
+                        showUserDialog = false
+                        editingUser = null
+                    }
                 }
             }
+        )
+    }
+    if (showDeleteUserDialog && deletingUser != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteUserDialog = false },
+            title = { Text("Delete User") },
+            text = { Text("Are you sure you want to delete ${deletingUser!!.username}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    adminViewModel.deleteUser(deletingUser!!.id)
+                    showDeleteUserDialog = false
+                }) { Text("Delete", color = Color.Red) }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteUserDialog = false }) { Text("Cancel") } }
         )
     }
 
@@ -416,7 +452,11 @@ fun TableDialog(
 }
 
 @Composable
-fun StaffTab(staffList: List<User>) {
+fun StaffTab(
+    staffList: List<User>,
+    onEdit: (User) -> Unit,
+    onDelete: (User) -> Unit
+) {
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -440,17 +480,9 @@ fun StaffTab(staffList: List<User>) {
                         modifier = Modifier.size(40.dp)
                     )
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = employee.username,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Text(
-                            text = employee.email ?: "No email",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = employee.username, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text(text = employee.email ?: "No email", fontSize = 14.sp)
                         Surface(
                             shape = RoundedCornerShape(4.dp),
                             color = MaterialTheme.colorScheme.secondaryContainer,
@@ -464,6 +496,15 @@ fun StaffTab(staffList: List<User>) {
                             )
                         }
                     }
+
+                    if (employee.role.name != "ADMIN") {
+                        IconButton(onClick = { onEdit(employee) }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Blue)
+                        }
+                        IconButton(onClick = { onDelete(employee) }) {
+                            Icon(Icons.Default.RemoveCircle, contentDescription = "Delete", tint = Color.Red)
+                        }
+                    }
                 }
             }
         }
@@ -471,23 +512,29 @@ fun StaffTab(staffList: List<User>) {
 }
 
 @Composable
-fun UserDialog(onDismiss: () -> Unit, onConfirm: (String, String, String, String) -> Unit) {
-    var user by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
+fun UserDialog(
+    userToEdit: User? = null,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, String, String) -> Unit
+) {
+    var user by remember { mutableStateOf(userToEdit?.username ?: "") }
+    var email by remember { mutableStateOf(userToEdit?.email ?: "") }
     var pass by remember { mutableStateOf("") }
-    var isAdmin by remember { mutableStateOf(false) }
+    var isAdmin by remember { mutableStateOf(userToEdit?.role?.name == "ADMIN") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add New User") },
+        title = { Text(if (userToEdit == null) "Add New User" else "Edit User Role") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = user, onValueChange = { user = it }, label = { Text("Username") })
-                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email Address") })
-                OutlinedTextField(value = pass, onValueChange = { pass = it }, label = { Text("Password") })
+                OutlinedTextField(value = user, onValueChange = { user = it }, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email Address") }, modifier = Modifier.fillMaxWidth())
 
+                if (userToEdit == null) {
+                    OutlinedTextField(value = pass, onValueChange = { pass = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth())
+                }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
                     Checkbox(checked = isAdmin, onCheckedChange = { isAdmin = it })
                     Text("Assign Admin Role")
                 }
@@ -497,7 +544,8 @@ fun UserDialog(onDismiss: () -> Unit, onConfirm: (String, String, String, String
             Button(onClick = {
                 val role = if (isAdmin) "ADMIN" else "STAFF"
                 onConfirm(user, email, pass, role)
-            }) { Text("Add User") }
-        }
+            }) { Text(if (userToEdit == null) "Add User" else "Save Changes") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }

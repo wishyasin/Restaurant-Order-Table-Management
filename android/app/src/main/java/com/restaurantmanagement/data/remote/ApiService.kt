@@ -54,6 +54,12 @@ interface ApiService {
 
     @POST("users")
     suspend fun addUser(@Body user: UserAddRequest): Response<Unit>
+
+    @DELETE("users/{id}")
+    suspend fun deleteUser(@Path("id") id: Int): Response<Unit>
+
+    @PUT("users/{id}")
+    suspend fun updateUser(@Path("id") id: Int, @Body user: UserAddRequest): Response<Unit>
 }
 data class LoginRequest(val username: String, val password: String)
 

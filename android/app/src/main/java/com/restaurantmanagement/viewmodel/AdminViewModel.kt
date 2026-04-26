@@ -124,4 +124,30 @@ class AdminViewModel(private val repository: RestaurantRepository = RestaurantRe
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
+
+    fun deleteUser(id: Int) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.apiService.deleteUser(id)
+                if (response.isSuccessful) {
+                    fetchUsers() // Listeyi yenile
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun updateUser(id: Int, username: String, email: String, pass: String, role: String, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val request = UserAddRequest(username, pass, role, email)
+                val response = RetrofitClient.apiService.updateUser(id, request)
+                if (response.isSuccessful) {
+                    fetchUsers()
+                    onComplete()
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
 }
