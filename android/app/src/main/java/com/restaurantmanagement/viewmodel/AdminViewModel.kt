@@ -3,6 +3,7 @@ package com.restaurantmanagement.viewmodel
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.restaurantmanagement.data.model.Table
 import com.restaurantmanagement.data.model.User
 import com.restaurantmanagement.data.remote.MenuItemRequest
 import com.restaurantmanagement.data.remote.RetrofitClient
@@ -41,13 +42,25 @@ class AdminViewModel(private val repository: RestaurantRepository = RestaurantRe
         }
     }
 
-    fun saveTable(number: Int, capacity: Int, onComplete: () -> Unit) {
+    fun saveTable(table: Table?, number: Int, capacity: Int, onComplete: () -> Unit) {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.apiService.addTable(TableRequest(number,
-                    capacity))
-                if (response.isSuccessful) onComplete()
-            } catch (e: Exception) { e.printStackTrace() }
+                val request = TableRequest(number, capacity)
+                val response = if (table == null) {
+
+                    RetrofitClient.apiService.addTable(request)
+                } else {
+
+                    RetrofitClient.apiService.updateTable(table.id, request)
+                }
+
+                if (response.isSuccessful) {
+                    fetchTables()
+                    onComplete()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -65,11 +78,25 @@ class AdminViewModel(private val repository: RestaurantRepository = RestaurantRe
         }
     }
 
+    var tables = mutableStateListOf<Table>()
+        private set
     var users = mutableStateListOf<User>()
         private set
-
     init {
         fetchUsers()
+        fetchTables()
+    }
+
+    fun fetchTables() {
+        viewModelScope.launch {
+            try {
+                val remoteTables = RetrofitClient.apiService.getTables()
+                tables.clear()
+                tables.addAll(remoteTables)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun fetchUsers() {

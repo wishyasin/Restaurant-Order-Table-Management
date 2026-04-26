@@ -136,8 +136,7 @@ fun AdminPanelScreen(
             table = editingTable,
             onDismiss = { showTableDialog = false },
             onConfirm = { number, capacity ->
-                adminViewModel.saveTable(number, capacity) {
-                    tableViewModel.fetchTables()
+                adminViewModel.saveTable(editingTable, number, capacity) {
                     showTableDialog = false
                 }
             }

@@ -19,6 +19,9 @@ interface ApiService {
     @GET("tables")
     suspend fun getTables(): List<Table>
 
+    @PUT("tables/{id}")
+    suspend fun updateTable(@Path("id") id: Int, @Body table: TableRequest): Response<Unit>
+
     @POST("menu")
     suspend fun addMenuItem(@Body item: MenuItemRequest): Response<Unit>
 
