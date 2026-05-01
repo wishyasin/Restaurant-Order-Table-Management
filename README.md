@@ -1,7 +1,12 @@
-# Restaurant Order and Table Management System
+# Restaurant Order Table Management System
 
-## Youtube Video Link
-https://www.youtube.com/watch?v=udtvFbaq6as
+## GitHub Repository
+[https://github.com/wishyasin/Restaurant-Order-Table-Management](https://github.com/wishyasin/Restaurant-Order-Table-Management)
+
+## YouTube Demo Video
+[https://www.youtube.com/watch?v=udtvFbaq6as](https://www.youtube.com/watch?v=udtvFbaq6as)
+
+---
 
 ## Team Details
 
@@ -12,6 +17,8 @@ https://www.youtube.com/watch?v=udtvFbaq6as
 | Abdülkadir Açıkkol | 230513328 | [kadiracikkol](https://github.com/kadiracikkol) |
 | Yasin Özçelik | 220513368 | [wishyasin](https://github.com/wishyasin) |
 | Barkın Kul | 220513344 | [barknkul](https://github.com/barknkul) |
+
+---
 
 ## Project Introduction
 
@@ -25,6 +32,8 @@ The system consists of three main components:
 - A **Node.js/Express** REST API backend handling authentication and business logic
 - An **Android mobile application** (Kotlin + Jetpack Compose) as the primary user interface
 
+---
+
 ## Architecture Link
 
 [View full architecture documentation](./ARCHITECTURE.md)
@@ -36,7 +45,7 @@ The system consists of three main components:
 ### Prerequisites
 
 - [Node.js](https://nodejs.org) (LTS version)
-- [PostgreSQL](https://postgresapp.com) (Postgres.app recommended for macOS)
+- [PostgreSQL](https://www.postgresql.org) (Postgres.app recommended for macOS)
 - [Android Studio](https://developer.android.com/studio)
 
 ---
@@ -58,9 +67,10 @@ Make sure PostgreSQL is running, then execute the setup script:
 psql -U your_username -d postgres -f setup.sql
 ```
 
-Replace `your_username` with your PostgreSQL username (usually your macOS username).
+Replace `your_username` with your PostgreSQL username (usually your system username).
 
 This will create the `restaurantdb` database, all tables, and sample data including:
+
 - 3 default users (`admin/1234`, `staff/1234`, `barking/1702`)
 - 6 tables
 - 12 menu items
@@ -109,7 +119,7 @@ The server will start on `http://localhost:3000`.
 1. Open Android Studio
 2. Select **File > Open** and choose the `android/` folder
 3. Wait for Gradle sync to complete
-4. Click the ▶️ **Run** button to launch the emulator
+4. Click the **Run** button to launch the emulator
 
 The app connects to the backend at `http://10.0.2.2:3000/api/` (Android emulator loopback address).
 
