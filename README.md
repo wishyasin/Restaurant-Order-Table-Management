@@ -34,6 +34,27 @@ The system consists of three main components:
 
 ---
 
+## Screenshots
+
+| Sign in | Tables | Menu |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/login.jpg" width="220"> | <img src="docs/screenshots/tables.jpg" width="220"> | <img src="docs/screenshots/menu.jpg" width="220"> |
+| **Table order** | **Daily report** | **Admin panel** |
+| <img src="docs/screenshots/order.jpg" width="220"> | <img src="docs/screenshots/report.jpg" width="220"> | <img src="docs/screenshots/admin.jpg" width="220"> |
+
+---
+
+## Features
+
+- **Table overview:** every table with its capacity and live status (empty / occupied)
+- **Ordering:** pick items from the menu by category or search, add them to a table's open order, change quantities
+- **Checkout:** close the order and free the table in one step
+- **Daily report:** revenue, open orders, pending amount, sales by category and top-selling items
+- **Admin panel:** manage menu items, tables and staff accounts
+- **Roles:** staff take orders; only admins see the daily report and the admin panel
+
+---
+
 ## Architecture Link
 
 [View full architecture documentation](./ARCHITECTURE.md)
