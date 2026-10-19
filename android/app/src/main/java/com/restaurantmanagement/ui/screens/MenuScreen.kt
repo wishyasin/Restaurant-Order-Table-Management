@@ -39,10 +39,13 @@ fun MenuScreen(
     var searchQuery      by remember { mutableStateOf("") }
     var showSearch       by remember { mutableStateOf(false) }
 
-    val filteredItems = remember(menuItems, selectedCategory, searchQuery) {
-        menuItems
-            .filter { selectedCategory == null || it.category == selectedCategory }
-            .filter { searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) }
+    // derivedStateOf reads the list's contents, so the filter reruns when the menu arrives from the API
+    val filteredItems by remember {
+        derivedStateOf {
+            menuItems
+                .filter { selectedCategory == null || it.category == selectedCategory }
+                .filter { searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) }
+        }
     }
 
     val totalSelected = selectedItems.sumOf { it.quantity }
