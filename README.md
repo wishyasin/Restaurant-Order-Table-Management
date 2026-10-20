@@ -10,13 +10,13 @@
 
 ## Team Details
 
-| Name | Student ID | GitHub Username |
-|------|-----------|-----------------|
-| Zeynep Kılıç | 220513345 | [ZeynepKkilic](https://github.com/ZeynepKkilic) |
-| Burak Berkay Ak | 220513355 | [burakberkayak](https://github.com/burakberkayak) |
-| Abdülkadir Açıkkol | 230513328 | [kadiracikkol](https://github.com/kadiracikkol) |
-| Yasin Özçelik | 220513368 | [wishyasin](https://github.com/wishyasin) |
-| Barkın Kul | 220513344 | [barknkul](https://github.com/barknkul) |
+| Name | GitHub Username |
+|------|-----------------|
+| Zeynep Kılıç | [ZeynepKkilic](https://github.com/ZeynepKkilic) |
+| Burak Berkay Ak | [burakberkayak](https://github.com/burakberkayak) |
+| Abdülkadir Açıkkol | [kadiracikkol](https://github.com/kadiracikkol) |
+| Yasin Özçelik | [wishyasin](https://github.com/wishyasin) |
+| Barkın Kul | [barknkul](https://github.com/barknkul) |
 
 ---
 
