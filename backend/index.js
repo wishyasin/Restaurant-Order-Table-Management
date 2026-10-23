@@ -43,11 +43,36 @@ app.post("/api/login", async (req, res) => {
 	}
 });
 
+// Verifies the "Authorization: Bearer <token>" header and exposes the
+// token payload as req.user. Registered after /api/login, so every route
+// below this line requires a valid token.
+function authenticate(req, res, next) {
+	const [scheme, token] = (req.headers.authorization || "").split(" ");
+	if (scheme !== "Bearer" || !token) {
+		return res.status(401).json({ message: "Missing token" });
+	}
+	try {
+		req.user = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
+		next();
+	} catch (err) {
+		res.status(401).json({ message: "Invalid or expired token" });
+	}
+}
+
+function requireAdmin(req, res, next) {
+	if (req.user.role !== "ADMIN") {
+		return res.status(403).json({ message: "Admin only" });
+	}
+	next();
+}
+
+app.use("/api", authenticate);
+
 // ─────────────────────────────────────────
 //  USERS
 // ─────────────────────────────────────────
 
-app.get("/api/users", async (req, res) => {
+app.get("/api/users", requireAdmin, async (req, res) => {
 	try {
 		const result = await pool.query("SELECT id, username, role, email FROM users ORDER BY id ASC");
 		res.json(result.rows);
@@ -56,7 +81,7 @@ app.get("/api/users", async (req, res) => {
 	}
 });
 
-app.post("/api/users", async (req, res) => {
+app.post("/api/users", requireAdmin, async (req, res) => {
 	const { username, password, role, email } = req.body;
 	if (!password) return res.status(400).json({ message: "Password is required" });
 	try {
@@ -84,7 +109,7 @@ app.get("/api/menu", async (req, res) => {
 	}
 });
 
-app.post("/api/menu", async (req, res) => {
+app.post("/api/menu", requireAdmin, async (req, res) => {
 	const { name, price, category, description } = req.body;
 	try {
 		const result = await pool.query(
@@ -97,7 +122,7 @@ app.post("/api/menu", async (req, res) => {
 	}
 });
 
-app.put("/api/menu/:id", async (req, res) => {
+app.put("/api/menu/:id", requireAdmin, async (req, res) => {
 	const { name, price, category, description } = req.body;
 	try {
 		const result = await pool.query(
@@ -111,7 +136,7 @@ app.put("/api/menu/:id", async (req, res) => {
 	}
 });
 
-app.delete("/api/menu/:id", async (req, res) => {
+app.delete("/api/menu/:id", requireAdmin, async (req, res) => {
 	try {
 		await pool.query("DELETE FROM menu_items WHERE id = $1", [req.params.id]);
 		res.sendStatus(200);
@@ -133,7 +158,7 @@ app.get("/api/tables", async (req, res) => {
 	}
 });
 
-app.post("/api/tables", async (req, res) => {
+app.post("/api/tables", requireAdmin, async (req, res) => {
 	const { number, capacity } = req.body;
 	try {
 		const result = await pool.query(
@@ -146,7 +171,7 @@ app.post("/api/tables", async (req, res) => {
 	}
 });
 
-app.put("/api/tables/:id", async (req, res) => {
+app.put("/api/tables/:id", requireAdmin, async (req, res) => {
 	const { number, capacity } = req.body;
 	try {
 		const result = await pool.query(
@@ -160,7 +185,7 @@ app.put("/api/tables/:id", async (req, res) => {
 	}
 });
 
-app.delete("/api/tables/:id", async (req, res) => {
+app.delete("/api/tables/:id", requireAdmin, async (req, res) => {
 	const client = await pool.connect();
 	try {
 		await client.query("BEGIN");
@@ -332,7 +357,7 @@ app.post("/api/orders/payment", async (req, res) => {
 //  REPORTS
 // ─────────────────────────────────────────
 
-app.get("/api/reports/daily", async (req, res) => {
+app.get("/api/reports/daily", requireAdmin, async (req, res) => {
 	try {
 		const summary = await pool.query(`
 			SELECT 
