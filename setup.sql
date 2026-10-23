@@ -54,11 +54,11 @@ CREATE TABLE order_items (
     table_id INT REFERENCES tables(id)
 );
 
--- Insert sample users
+-- Insert sample users (password for all: 1234, stored as a bcrypt hash)
 INSERT INTO users (username, password, role, email) VALUES
-('admin', '1234', 'ADMIN', 'admin@gmail.com'),
-('staff1', '1234', 'STAFF', 'staff1@gmail.com'),
-('staff2', '1234', 'STAFF', 'staff2@gmail.com');
+('admin', '$2a$10$W2osD9CNrJa/VWX2JnOwue8VBr8vx73YF8dJcPWy36ajdzVtKNmfq', 'ADMIN', 'admin@gmail.com'),
+('staff1', '$2a$10$W2osD9CNrJa/VWX2JnOwue8VBr8vx73YF8dJcPWy36ajdzVtKNmfq', 'STAFF', 'staff1@gmail.com'),
+('staff2', '$2a$10$W2osD9CNrJa/VWX2JnOwue8VBr8vx73YF8dJcPWy36ajdzVtKNmfq', 'STAFF', 'staff2@gmail.com');
 
 -- Insert sample tables
 INSERT INTO tables (number, capacity, status) VALUES

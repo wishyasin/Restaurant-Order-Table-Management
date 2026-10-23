@@ -1,6 +1,9 @@
 const express = require("express");
 const cors = require("cors");
+const bcrypt = require("bcryptjs");
 const pool = require("./db");
+
+const BCRYPT_ROUNDS = 10;
 
 const app = express();
 app.use(cors());
@@ -14,14 +17,15 @@ app.post("/api/login", async (req, res) => {
 	const { username, password } = req.body;
 	try {
 		const result = await pool.query(
-			"SELECT id, username, role FROM users WHERE username = $1 AND password = $2",
-			[username, password],
+			"SELECT id, username, role, password FROM users WHERE username = $1",
+			[username],
 		);
-		if (result.rows.length > 0) {
-			res.json(result.rows[0]);
-		} else {
-			res.status(401).json({ message: "Invalid username or password" });
+		const user = result.rows[0];
+		// Same message whether the user is missing or the password is wrong
+		if (!user || !(await bcrypt.compare(password ?? "", user.password))) {
+			return res.status(401).json({ message: "Invalid username or password" });
 		}
+		res.json({ id: user.id, username: user.username, role: user.role });
 	} catch (err) {
 		res.status(500).json({ error: err.message });
 	}
@@ -41,12 +45,14 @@ app.get("/api/users", async (req, res) => {
 });
 
 app.post("/api/users", async (req, res) => {
-    const { username, password, role, email } = req.body;
-    try {
-        await pool.query(
-            "INSERT INTO users (username, password, role, email) VALUES ($1, $2, $3, $4)",
-            [username, password, role, email],
-        );
+	const { username, password, role, email } = req.body;
+	if (!password) return res.status(400).json({ message: "Password is required" });
+	try {
+		const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+		await pool.query(
+			"INSERT INTO users (username, password, role, email) VALUES ($1, $2, $3, $4)",
+			[username, hash, role, email],
+		);
 		res.sendStatus(201);
 	} catch (err) {
 		res.status(500).json({ error: err.message });
@@ -356,20 +362,6 @@ app.get("/api/reports/daily", async (req, res) => {
 		console.error(err);
 		res.status(500).json({ error: err.message });
 	}
-});
-
-// add user with email
-app.post("/api/users", async (req, res) => {
-    const { username, password, role, email } = req.body;
-    try {
-        await pool.query(
-            "INSERT INTO users (username, password, role, email) VALUES ($1, $2, $3, $4)",
-            [username, password, role, email],
-        );
-        res.sendStatus(201);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
 });
 
 // ─────────────────────────────────────────

@@ -92,7 +92,7 @@ Replace `your_username` with your PostgreSQL username (usually your system usern
 
 This will create the `restaurantdb` database, all tables, and sample data including:
 
-- 3 default users (`admin/1234`, `staff/1234`, `barking/1702`)
+- 3 default users (`admin/1234`, `staff1/1234`, `staff2/1234`); passwords are stored as bcrypt hashes
 - 6 tables
 - 12 menu items
 
@@ -133,6 +133,12 @@ npm run dev
 
 The server will start on `http://localhost:3000`.
 
+If your database was created before passwords were hashed, run this once to hash the existing plain-text passwords:
+
+```bash
+node scripts/hash-passwords.js
+```
+
 ---
 
 ### 5. Run the Android App
@@ -151,5 +157,5 @@ The app connects to the backend at `http://10.0.2.2:3000/api/` (Android emulator
 | Username | Password | Role |
 |----------|----------|------|
 | admin | 1234 | ADMIN |
-| staff | 1234 | STAFF |
-| barking | 1702 | STAFF |
+| staff1 | 1234 | STAFF |
+| staff2 | 1234 | STAFF |
