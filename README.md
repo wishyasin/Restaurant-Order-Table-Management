@@ -115,11 +115,15 @@ DB_PORT=5432
 DB_NAME=restaurantdb
 DB_USER=your_username
 DB_PASSWORD=
-JWT_SECRET=restoran_gizli_anahtar_2024
+JWT_SECRET=change_me_to_a_long_random_string
 PORT=3000
 ```
 
-Replace `your_username` with your PostgreSQL username.
+Replace `your_username` with your PostgreSQL username. `JWT_SECRET` signs the login tokens and the server refuses to start without it; generate one with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
 
 ---
 

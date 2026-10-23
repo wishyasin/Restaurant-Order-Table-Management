@@ -1,9 +1,17 @@
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const pool = require("./db");
 
 const BCRYPT_ROUNDS = 10;
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = "8h";
+
+if (!JWT_SECRET) {
+	console.error("JWT_SECRET is not set. Add it to backend/.env");
+	process.exit(1);
+}
 
 const app = express();
 app.use(cors());
@@ -25,7 +33,11 @@ app.post("/api/login", async (req, res) => {
 		if (!user || !(await bcrypt.compare(password ?? "", user.password))) {
 			return res.status(401).json({ message: "Invalid username or password" });
 		}
-		res.json({ id: user.id, username: user.username, role: user.role });
+		const token = jwt.sign({ sub: user.id, role: user.role }, JWT_SECRET, {
+			algorithm: "HS256",
+			expiresIn: JWT_EXPIRES_IN,
+		});
+		res.json({ id: user.id, username: user.username, role: user.role, token });
 	} catch (err) {
 		res.status(500).json({ error: err.message });
 	}

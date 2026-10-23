@@ -33,6 +33,7 @@ import androidx.navigation.NavController
 import com.restaurantmanagement.navigation.Screen
 import com.restaurantmanagement.data.remote.RetrofitClient
 import com.restaurantmanagement.data.remote.LoginRequest
+import com.restaurantmanagement.data.remote.SessionManager
 import kotlinx.coroutines.launch
 
 @Composable
@@ -111,7 +112,7 @@ fun LoginScreen(navController: NavController) {
                     if (response.isSuccessful) {
                         val user = response.body()
                         if (user != null) {
-
+                            SessionManager.token = user.token
                             navController.navigate("${Screen.Tables.route}/${user.role}") {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }

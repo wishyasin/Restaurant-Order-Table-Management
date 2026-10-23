@@ -8,7 +8,7 @@ import retrofit2.http.*
 interface ApiService {
 
     @POST("login")
-    suspend fun login(@Body request: LoginRequest): Response<User>
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
     @POST("orders/{orderId}/items")
 
@@ -62,6 +62,13 @@ interface ApiService {
     suspend fun updateUser(@Path("id") id: Int, @Body user: UserAddRequest): Response<Unit>
 }
 data class LoginRequest(val username: String, val password: String)
+
+data class LoginResponse(
+    val id: Int,
+    val username: String,
+    val role: String,
+    val token: String
+)
 
 data class OrderRequest(
     val table_id: Int,
