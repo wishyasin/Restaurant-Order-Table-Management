@@ -96,6 +96,40 @@ app.post("/api/users", requireAdmin, async (req, res) => {
 	}
 });
 
+// The edit dialog sends an empty password when it should stay unchanged
+app.put("/api/users/:id", requireAdmin, async (req, res) => {
+	const { username, password, role, email } = req.body;
+	const id = Number(req.params.id);
+	if (id === req.user.sub && role !== "ADMIN") {
+		return res.status(400).json({ message: "You cannot remove your own admin role" });
+	}
+	try {
+		const hash = password ? await bcrypt.hash(password, BCRYPT_ROUNDS) : null;
+		const result = await pool.query(
+			"UPDATE users SET username = $1, role = $2, email = $3, password = COALESCE($4, password) WHERE id = $5",
+			[username, role, email, hash, id],
+		);
+		if (result.rowCount === 0) return res.status(404).json({ message: "User not found" });
+		res.sendStatus(204);
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+});
+
+app.delete("/api/users/:id", requireAdmin, async (req, res) => {
+	const id = Number(req.params.id);
+	if (id === req.user.sub) {
+		return res.status(400).json({ message: "You cannot delete your own account" });
+	}
+	try {
+		const result = await pool.query("DELETE FROM users WHERE id = $1", [id]);
+		if (result.rowCount === 0) return res.status(404).json({ message: "User not found" });
+		res.sendStatus(204);
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+});
+
 // ─────────────────────────────────────────
 //  MENU
 // ─────────────────────────────────────────
