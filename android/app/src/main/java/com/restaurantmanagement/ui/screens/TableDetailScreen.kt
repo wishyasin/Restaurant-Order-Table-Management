@@ -91,6 +91,76 @@ fun TableDetailScreen(
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Item", tint = Color.White)
             }
+        },
+        bottomBar = {
+            if (orderItems.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape    = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                    elevation= CardDefaults.cardElevation(defaultElevation = 12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 32.dp)
+                    ) {
+                        // Summary row
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Total Items", fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "${orderItems.sumOf { it.quantity }} items",
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Total Amount", fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "$${String.format("%.2f", totalAmount)}",
+                                    fontSize   = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color      = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(14.dp))
+
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick  = { showOrderSummary = true },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 12.dp)
+                            ) {
+                                Icon(Icons.Default.Receipt, contentDescription = null,
+                                    modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Summary", maxLines = 1, softWrap = false)
+                            }
+                            Button(
+                                onClick = { showPaymentDialog = true },
+                                modifier= Modifier.weight(2f),
+                                colors  = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF388E3C)
+                                )
+                            ) {
+                                Icon(Icons.Default.Payment, contentDescription = null,
+                                    modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Checkout", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -173,74 +243,6 @@ fun TableDetailScreen(
                 }
             }
 
-            // ── Bottom summary bar ────────────────────
-            if (orderItems.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape    = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                    elevation= CardDefaults.cardElevation(defaultElevation = 12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 32.dp)
-                    ) {
-                        // Summary row
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment     = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("Total Items", fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(
-                                    "${orderItems.sumOf { it.quantity }} items",
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text("Total Amount", fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(
-                                    "$${String.format("%.2f", totalAmount)}",
-                                    fontSize   = 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color      = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(14.dp))
-
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick  = { showOrderSummary = true },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Default.Receipt, contentDescription = null,
-                                    modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text("Summary")
-                            }
-                            Button(
-                                onClick = { showPaymentDialog = true },
-                                modifier= Modifier.weight(2f),
-                                colors  = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF388E3C)
-                                )
-                            ) {
-                                Icon(Icons.Default.Payment, contentDescription = null,
-                                    modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Checkout", fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
